@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard PSH — Kolej Komuniti Arau</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+      background: #f0f4f8;
+      color: #1f2328;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: linear-gradient(135deg, #0a3d62 0%, #1a6fa8 100%);
+      color: #fff;
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    }
+    header .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    header .logo-circle {
+      width: 52px; height: 52px;
+      background: #fff;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 18px; color: #0a3d62;
+      flex-shrink: 0;
+    }
+    header .title-block h1 {
+      font-size: 20px; font-weight: 700; letter-spacing: 0.3px;
+    }
+    header .title-block p {
+      font-size: 12px; opacity: 0.85; margin-top: 2px;
+    }
+    header .header-right {
+      text-align: right; font-size: 12px; opacity: 0.85;
+    }
+    header .header-right strong {
+      display: block; font-size: 14px; opacity: 1;
+    }
+
+    /* ── NAV ── */
+    nav {
+      background: #fff;
+      border-bottom: 1px solid #dce3ea;
+      display: flex;
+      gap: 0;
+      padding: 0 32px;
+      overflow-x: auto;
+    }
+    nav a {
+      display: inline-block;
+      padding: 12px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #57606a;
+      text-decoration: none;
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+      transition: color .2s, border-color .2s;
+    }
+    nav a:hover { color: #0a3d62; }
+    nav a.active { color: #0a3d62; border-bottom-color: #0a3d62; }
+
+    /* ── MAIN ── */
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 28px 24px 48px;
+    }
+
+    /* ── SECTION TITLE ── */
+    .section-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0a3d62;
+      margin-bottom: 14px;
+      padding-left: 10px;
+      border-left: 4px solid #1a6fa8;
+    }
+
+    /* ── KPI CARDS ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 18px;
+      margin-bottom: 32px;
+    }
+    .kpi-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px 22px;
+      border-top: 4px solid #ccc;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .kpi-card.blue  { border-top-color: #1a6fa8; }
+    .kpi-card.green { border-top-color: #27ae60; }
+    .kpi-card.orange{ border-top-color: #e67e22; }
+    .kpi-card.purple{ border-top-color: #8e44ad; }
+
+    .kpi-icon {
+      width: 46px; height: 46px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .kpi-card.blue   .kpi-icon { background: #dbeafe; }
+    .kpi-card.green  .kpi-icon { background: #dcfce7; }
+    .kpi-card.orange .kpi-icon { background: #fff7ed; }
+    .kpi-card.purple .kpi-icon { background: #f3e8ff; }
+
+    .kpi-info .kpi-value {
+      font-size: 28px; font-weight: 800; line-height: 1.1;
+    }
+    .kpi-card.blue   .kpi-value { color: #1a6fa8; }
+    .kpi-card.green  .kpi-value { color: #27ae60; }
+    .kpi-card.orange .kpi-value { color: #e67e22; }
+    .kpi-card.purple .kpi-value { color: #8e44ad; }
+
+    .kpi-info .kpi-label {
+      font-size: 12px; color: #57606a; margin-top: 3px;
+    }
+    .kpi-info .kpi-sub {
+      font-size: 11px; color: #9ca3af; margin-top: 4px;
+    }
+
+    /* ── CHARTS ROW ── */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-bottom: 32px;
+    }
+    @media (max-width: 700px) {
+      .charts-row { grid-template-columns: 1fr; }
+    }
+    .chart-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px 22px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .chart-card.full-width {
+      grid-column: 1 / -1;
+    }
+    .chart-card h3 {
+      font-size: 13px; font-weight: 700; color: #0a3d62;
+      margin-bottom: 14px;
+    }
+    .chart-wrapper {
+      position: relative;
+      height: 220px;
+    }
+
+    /* ── TABLE ── */
+    .table-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px 22px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      overflow-x: auto;
+      margin-bottom: 32px;
+    }
+    .table-card h3 {
+      font-size: 13px; font-weight: 700; color: #0a3d62; margin-bottom: 14px;
+    }
+    table {
+      width: 100%; border-collapse: collapse; font-size: 13px;
+    }
+    thead tr { background: #f0f4f8; }
+    thead th {
+      text-align: left;
+      padding: 10px 12px;
+      font-weight: 700;
+      color: #0a3d62;
+      border-bottom: 2px solid #dce3ea;
+      white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid #f0f4f8; }
+    tbody tr:hover { background: #f8fafc; }
+    tbody td { padding: 9px 12px; color: #374151; vertical-align: middle; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-aktif    { background: #dcfce7; color: #15803d; }
+    .badge-selesai  { background: #dbeafe; color: #1d4ed8; }
+    .badge-tangguh  { background: #fee2e2; color: #dc2626; }
+    .badge-merancang{ background: #fef9c3; color: #92400e; }
+
+    .progress-bar-wrap {
+      background: #e5e7eb;
+      border-radius: 99px;
+      height: 8px;
+      width: 90px;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    .progress-bar-fill {
+      height: 8px;
+      border-radius: 99px;
+      background: #1a6fa8;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      font-size: 12px;
+      color: #9ca3af;
+      border-top: 1px solid #e5e7eb;
+      padding: 18px 24px;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo-area">
+    <div class="logo-circle">KKA</div>
+    <div class="title-block">
+      <h1>Dashboard Pembelajaran Sepanjang Hayat</h1>
+      <p>Kolej Komuniti Arau &nbsp;|&nbsp; Jabatan PSH</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <strong>Tahun 2026</strong>
+    Data dikemaskini: 4 November 2026
+  </div>
+</header>
+
+<!-- NAV -->
+<nav>
+  <a href="#ringkasan" class="active">📊 Ringkasan</a>
+  <a href="#carta">📈 Carta & Tren</a>
+  <a href="#program">📋 Senarai Program</a>
+</nav>
+
+<!-- MAIN -->
+<main>
+
+  <!-- SECTION 1: KPI CARDS -->
+  <section id="ringkasan">
+    <p class="section-title">Ringkasan Prestasi Keseluruhan</p>
+    <div class="kpi-grid">
+
+      <div class="kpi-card blue">
+        <div class="kpi-icon">👥</div>
+        <div class="kpi-info">
+          <div class="kpi-value">342</div>
+          <div class="kpi-label">Jumlah Peserta Program</div>
+          <div class="kpi-sub">▲ 12% berbanding tahun lalu</div>
+        </div>
+      </div>
+
+      <div class="kpi-card green">
+        <div class="kpi-icon">📚</div>
+        <div class="kpi-info">
+          <div class="kpi-value">8</div>
+          <div class="kpi-label">Program Aktif Sedang Berjalan</div>
+          <div class="kpi-sub">Daripada 12 program dirancang</div>
+        </div>
+      </div>
+
+      <div class="kpi-card orange">
+        <div class="kpi-icon">✅</div>
+        <div class="kpi-info">
+          <div class="kpi-value">87%</div>
+          <div class="kpi-label">Kadar Kehadiran Keseluruhan</div>
+          <div class="kpi-sub">Sasaran: 85% — Melebihi sasaran</div>
+        </div>
+      </div>
+
+      <div class="kpi-card purple">
+        <div class="kpi-icon">🎯</div>
+        <div class="kpi-info">
+          <div class="kpi-value">76%</div>
+          <div class="kpi-label">Pencapaian Sasaran Tahunan</div>
+          <div class="kpi-sub">258 / 340 peserta disasarkan</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SECTION 2: CHARTS -->
+  <section id="carta">
+    <p class="section-title">Carta &amp; Visualisasi Data</p>
+    <div class="charts-row">
+
+      <!-- Chart 1: Bar - Peserta mengikut Program -->
+      <div class="chart-card">
+        <h3>📊 Bilangan Peserta Mengikut Program</h3>
+        <div class="chart-wrapper">
+          <canvas id="chartBar"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 2: Donut - Sasaran vs Pencapaian -->
+      <div class="chart-card">
+        <h3>🎯 Sasaran vs Pencapaian Peserta</h3>
+        <div class="chart-wrapper">
+          <canvas id="chartDonut"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 3: Line - Trend Kehadiran Bulanan (full width) -->
+      <div class="chart-card full-width">
+        <h3>📈 Trend Kadar Kehadiran Bulanan (2026)</h3>
+        <div class="chart-wrapper" style="height:200px;">
+          <canvas id="chartLine"></canvas>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SECTION 3: TABLE -->
+  <section id="program">
+    <p class="section-title">Senarai Program PSH 2026</p>
+    <div class="table-card">
+      <h3>📋 Status & Prestasi Program</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Nama Program</th>
+            <th>Tarikh</th>
+            <th>Peserta</th>
+            <th>Kehadiran</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>Kursus Jahitan &amp; Kraftangan</td>
+            <td>Jan – Mac 2026</td>
+            <td>45</td>
+            <td>
+              <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:92%"></div></div>
+              92%
+            </td>
+            <td><span class="badge badge-selesai">Selesai</span></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Kursus Masakan &amp; Pastri</td>
+            <td>Feb – Apr 2026</td>
+            <td>38</td>
+            <td>
+              <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:88%"></div></div>
+              88%
+            </td>
+            <td><span class="badge badge-selesai">Selesai</span></td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Kursus Komputer Asas</td>
+            <td>Mac – Mei 2026</td>
+            <td>52</td>
+            <td>
+              <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:85%"></div></div>
+              85%
+            </td>
+            <td><span class="badge badge-selesai">Selesai</span></td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Kelas Bahasa Inggeris Komunikasi</td>
+            <td>Apr – Jun 2026</td>
+            <td>40</td>
+            <td>
+              <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:79%"></div></div>
+              79%
+            </td>
+            <td><span class="badge badge-selesai">Selesai</span></td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>Kursus Keusahawanan Asas</td>
+            <td>Jun – Ogos 2026</td>
+            <td>35</td>
+            <td>
+              <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:91%"></div></div>
+              91%
+            </td>
+            <td><span class="badge badge-aktif">Aktif</span></td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>Kursus Perniagaan Online &amp; E-Dagang</td>
+            <td>Jul – Sep 2026</td>
+            <td>48</td>
+            <td>
+              <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:83%"></div></div>
+              83%
+            </td>
+            <td><span class="badge badge-aktif">Aktif</span></td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td>Kursus Pertanian Moden (Hidroponik)</td>
+            <td>Ogos – Okt 2026</td>
+            <td>30</td>
+            <td>
+              <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:90%"></div></div>
+              90%
+            </td>
+            <td><span class="badge badge-aktif">Aktif</span></td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td>Kursus Kewangan Peribadi</td>
+            <td>Nov – Dis 2026</td>
+            <td>54</td>
+            <td>
+              <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:86%"></div></div>
+              86%
+            </td>
+            <td><span class="badge badge-aktif">Aktif</span></td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td>Kursus Pengurusan Rumah Tangga</td>
+            <td>Dis 2026</td>
+            <td>—</td>
+            <td>—</td>
+            <td><span class="badge badge-merancang">Merancang</span></td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td>Kursus Seni Visual &amp; Kraftangan Lanjutan</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td><span class="badge badge-tangguh">Ditangguh</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <p>Jabatan Pembelajaran Sepanjang Hayat &nbsp;|&nbsp; Kolej Komuniti Arau &nbsp;|&nbsp; Laporan Tahun 2026</p>
+  <p style="margin-top:4px;">Made with IBM Bob</p>
+</footer>
+
+<!-- CHARTS JS -->
+<script>
+  // ── CHART 1: BAR ──
+  new Chart(document.getElementById('chartBar'), {
+    type: 'bar',
+    data: {
+      labels: ['Jahitan', 'Masakan', 'Komputer', 'B. Inggeris', 'Keusahawanan', 'E-Dagang', 'Hidroponik', 'Kewangan'],
+      datasets: [{
+        label: 'Bilangan Peserta',
+        data: [45, 38, 52, 40, 35, 48, 30, 54],
+        backgroundColor: [
+          '#1a6fa8','#27ae60','#8e44ad','#e67e22',
+          '#1a6fa8','#27ae60','#8e44ad','#e67e22'
+        ],
+        borderRadius: 5
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 10 }, grid: { color: '#f0f4f8' } },
+        x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+      }
+    }
+  });
+
+  // ── CHART 2: DONUT ──
+  new Chart(document.getElementById('chartDonut'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Pencapaian (258)', 'Baki Sasaran (82)'],
+      datasets: [{
+        data: [258, 82],
+        backgroundColor: ['#1a6fa8', '#e5e7eb'],
+        hoverOffset: 4,
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 } } }
+      }
+    }
+  });
+
+  // ── CHART 3: LINE ──
+  new Chart(document.getElementById('chartLine'), {
+    type: 'line',
+    data: {
+      labels: ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogos', 'Sep', 'Okt'],
+      datasets: [{
+        label: 'Kadar Kehadiran (%)',
+        data: [80, 82, 85, 79, 88, 87, 91, 90, 86, 87],
+        borderColor: '#1a6fa8',
+        backgroundColor: 'rgba(26,111,168,0.08)',
+        pointBackgroundColor: '#1a6fa8',
+        tension: 0.4,
+        fill: true,
+        pointRadius: 4
+      }, {
+        label: 'Sasaran (85%)',
+        data: [85,85,85,85,85,85,85,85,85,85],
+        borderColor: '#e67e22',
+        borderDash: [6, 4],
+        borderWidth: 2,
+        pointRadius: 0,
+        fill: false
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+      scales: {
+        y: { min: 70, max: 100, ticks: { stepSize: 5 }, grid: { color: '#f0f4f8' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+</script>
+
+</body>
+</html>
